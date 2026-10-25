@@ -27,6 +27,11 @@
 **第 3 步：双击 `start.bat`**
 输入一个问题回车，会看到三种回答：原样、加上拒绝方向、消去拒绝方向。空行退出。
 
+**已经装过环境 / 下过模型的话**：`install.bat` 会自动识别并跳过——
+当前 `python` 里已有 torch 和 transformers 就直接用它（不建 `.venv`、不重装）；
+模型、数据、`direction.pt` 已经存在也都会跳过。环境在别处的话，运行前先设置环境变量：
+`REFUSAL_PYTHON`（现成环境的 python.exe 路径）、`REFUSAL_MODEL_DIR`（模型目录）、`REFUSAL_DATA_DIR`（数据目录）。
+
 就这样。下面是进阶内容，不需要可以不看。
 
 ---

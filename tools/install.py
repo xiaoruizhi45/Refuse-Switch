@@ -3,6 +3,7 @@
 用法：双击 install.bat，或  python tools/install.py
 每一步都会检查是否已完成，中途失败后直接重跑即可接着来。
 """
+import os
 import re
 import subprocess
 import sys
@@ -11,7 +12,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 VENV = ROOT / ".venv"
-PY = VENV / ("Scripts/python.exe" if sys.platform == "win32" else "bin/python")
+VENV_PY = VENV / ("Scripts/python.exe" if sys.platform == "win32" else "bin/python")
+PY = VENV_PY  # 实际使用哪个 Python，在 main() 里决定
 
 
 def step(text):
@@ -84,8 +86,8 @@ def torch_tag_note():
     return None, "显卡驱动太旧，安装 CPU 版 torch（想用 GPU 请先更新显卡驱动）"
 
 
-def torch_ready():
-    probe = subprocess.run([str(PY), "-c", "import torch, transformers"], capture_output=True)
+def has_libs(python):
+    probe = subprocess.run([str(python), "-c", "import torch, transformers"], capture_output=True)
     return probe.returncode == 0
 
 
@@ -93,14 +95,23 @@ def main():
     if sys.version_info < (3, 10):
         sys.exit("需要 Python 3.10 或更新版本，请到 https://www.python.org/downloads/ 安装。")
 
-    step("[1/5] 创建虚拟环境 .venv")
-    if PY.exists():
-        print("已存在，跳过。")
+    global PY
+    step("[1/5] 准备 Python 环境")
+    custom = os.environ.get("REFUSAL_PYTHON")
+    if custom:
+        PY = Path(custom)
+        print(f"使用 REFUSAL_PYTHON 指定的 Python：{PY}")
+    elif VENV_PY.exists():
+        print("已有 .venv，直接使用。")
+    elif has_libs(sys.executable):
+        PY = Path(sys.executable)
+        print(f"当前 Python 已装好 torch 和 transformers，直接使用，不再新建环境：{PY}")
     else:
+        print("创建虚拟环境 .venv ...")
         venv.create(VENV, with_pip=True)
 
     step("[2/5] 安装依赖（torch 较大，请耐心等待）")
-    if torch_ready():
+    if has_libs(PY):
         print("已安装，跳过。")
     else:
         tag, note = torch_tag_note()

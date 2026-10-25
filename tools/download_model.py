@@ -4,6 +4,7 @@
 已经下载好的会直接跳过。
 """
 import os
+import subprocess
 import sys
 
 from config import MODEL_DIR
@@ -19,6 +20,14 @@ def already_there():
 
 
 def from_modelscope():
+    try:
+        import modelscope  # noqa: F401
+    except ImportError:
+        subprocess.run(
+            [sys.executable, "-m", "pip", "install", "modelscope",
+             "-i", "https://pypi.tuna.tsinghua.edu.cn/simple"],
+            check=True,
+        )
     from modelscope import snapshot_download
 
     snapshot_download(REPO, local_dir=str(MODEL_DIR))
